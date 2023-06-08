@@ -1,6 +1,7 @@
 // const axios = require('axios')
 // const url = 'http://checkip.amazonaws.com/';
 let response;
+var AWS = require('aws-sdk');
 
 /**
  *
@@ -30,5 +31,33 @@ exports.lambdaHandler = async (event, context) => {
         return err;
     }
     console.log(event);
+
+    var s3ObjectKey = event.Records[0].s3.object.key;
+    var s3TimeStamb = event.Records[0].eventTime;
+
+    // Set the region 
+    AWS.config.update({ region: 'REGION' });
+
+    // Create the DynamoDB service object
+    var ddb = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
+
+    var params = {
+        TableName: 'lambdatestdeply-HelloWorldFunctionTable-J09LF96D7SOE',
+        Item: {
+            'CUSTOMER_ID': { S: 's3ObjectKey' },
+            'CUSTOMER_NAME': { S: 's3TimeStamp' }
+        }
+    };
+
+    // Call DynamoDB to add the item to the table
+    await ddb.putItem(params, function(err, data) {
+        if (err) {
+            console.log("Error", err);
+        }
+        else {
+            console.log("Success", data);
+        }
+    }).promise();
+
     return response
 };
